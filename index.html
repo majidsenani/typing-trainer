@@ -38,6 +38,9 @@
   .close-btn { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: #555; font-family: inherit; }
   .close-btn:hover { background: #f5f5f5; }
   .empty { text-align: center; color: #aaa; font-size: 14px; padding: 2rem; }
+  .loading { text-align: center; color: #aaa; font-size: 14px; padding: 2rem; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
   @media (max-width: 600px) {
     body { padding: 16px; }
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -82,44 +85,73 @@
     <button class="filter-btn" onclick="setFilter('نبيل', this)">نبيل</button>
     <button class="filter-btn" onclick="setFilter('ماجد', this)">ماجد</button>
   </div>
-  <div id="taskList"></div>
+  <div id="taskList"><div class="loading">جاري التحميل...</div></div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+  const SUPABASE_URL = 'https://ftypfqrbcngbcfbvxrys.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0eXBmcXJiY25nYmNmYnZ4cnlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjEzMDYsImV4cCI6MjA5MjMzNzMwNn0.cMWwp2QkWkJEOSih7LCBuj8c4vCYxgj_f37h69ZC4UE';
+  const HEADERS = {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY
+  };
+
+  let tasks = [];
   let currentFilter = 'all';
   const employees = ['مشاعل', 'محمد', 'نبيل', 'ماجد'];
 
-  function save() {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  function addTask() {
+  async function fetchTasks() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?order=created_at.desc`, { headers: HEADERS });
+      tasks = await res.json();
+      render();
+    } catch(e) {
+      document.getElementById('taskList').innerHTML = '<div class="empty">تعذر الاتصال بالخادم</div>';
+    }
+  }
+
+  async function addTask() {
     const name = document.getElementById('taskName').value.trim();
     if (!name) { alert('يرجى إدخال اسم المهمة'); return; }
-    tasks.unshift({ id: Date.now(), name, done: false, closedBy: null, closedAt: null });
     document.getElementById('taskName').value = '';
-    save();
-    render();
+    await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ name, done: false, closed_by: null, closed_at: null })
+    });
+    showToast('تمت إضافة المهمة');
+    fetchTasks();
   }
 
-  function closeTask(id, closer) {
+  async function closeTask(id, closer) {
     if (!closer) { alert('اختر اسمك أولاً'); return; }
-    const t = tasks.find(x => x.id === id);
-    if (t) {
-      t.done = true;
-      t.closedBy = closer;
-      t.closedAt = new Date().toLocaleString('ar-SA');
-    }
-    save();
-    render();
+    await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ done: true, closed_by: closer, closed_at: new Date().toLocaleString('ar-SA') })
+    });
+    showToast('تم إغلاق المهمة ✓');
+    fetchTasks();
   }
 
-  function deleteTask(id) {
+  async function deleteTask(id) {
     if (!confirm('هل تريد حذف هذه المهمة؟')) return;
-    tasks = tasks.filter(x => x.id !== id);
-    save();
-    render();
+    await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: HEADERS
+    });
+    showToast('تم حذف المهمة');
+    fetchTasks();
   }
 
   function setFilter(f, btn) {
@@ -131,7 +163,7 @@
 
   function updateStats() {
     employees.forEach(emp => {
-      const done = tasks.filter(t => t.done && t.closedBy === emp).length;
+      const done = tasks.filter(t => t.done && t.closed_by === emp).length;
       document.getElementById('s-' + emp).textContent = done;
     });
   }
@@ -141,19 +173,16 @@
     let filtered = tasks;
     if (currentFilter === 'open') filtered = tasks.filter(t => !t.done);
     else if (currentFilter === 'done') filtered = tasks.filter(t => t.done);
-    else if (employees.includes(currentFilter)) filtered = tasks.filter(t => t.closedBy === currentFilter);
+    else if (employees.includes(currentFilter)) filtered = tasks.filter(t => t.closed_by === currentFilter);
 
     const list = document.getElementById('taskList');
-    if (filtered.length === 0) {
-      list.innerHTML = '<div class="empty">لا توجد مهام</div>';
-      return;
-    }
+    if (filtered.length === 0) { list.innerHTML = '<div class="empty">لا توجد مهام</div>'; return; }
 
     list.innerHTML = filtered.map(t => `
       <div class="task-item ${t.done ? 'done' : ''}">
         <div style="flex:1">
           <div class="task-name ${t.done ? 'done-text' : ''}">${t.name}</div>
-          ${t.done ? `<div style="margin-top:5px"><span class="task-closer">أغلقها: ${t.closedBy} — ${t.closedAt}</span></div>` : ''}
+          ${t.done ? `<div style="margin-top:5px"><span class="task-closer">أغلقها: ${t.closed_by} — ${t.closed_at}</span></div>` : ''}
         </div>
         ${!t.done ? `
           <select class="who-select" id="closer-${t.id}">
@@ -167,7 +196,8 @@
     `).join('');
   }
 
-  render();
+  fetchTasks();
+  setInterval(fetchTasks, 10000);
 </script>
 </body>
 </html>
