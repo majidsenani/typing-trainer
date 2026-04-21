@@ -96,7 +96,8 @@
   const HEADERS = {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_KEY
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Prefer': 'return=representation'
   };
 
   let tasks = [];
@@ -112,9 +113,10 @@
 
   async function fetchTasks() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?order=created_at.desc`, { headers: HEADERS });
-      tasks = await res.json();
-      render();
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?select=*&order=created_at.desc`, { headers: HEADERS });
+      const data = await res.json();
+      if (Array.isArray(data)) { tasks = data; render(); }
+      else { console.error(data); }
     } catch(e) {
       document.getElementById('taskList').innerHTML = '<div class="empty">تعذر الاتصال بالخادم</div>';
     }
@@ -124,24 +126,30 @@
     const name = document.getElementById('taskName').value.trim();
     if (!name) { alert('يرجى إدخال اسم المهمة'); return; }
     document.getElementById('taskName').value = '';
-    await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
       method: 'POST',
-      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ name, done: false, closed_by: null, closed_at: null })
+      headers: HEADERS,
+      body: JSON.stringify({ name, done: false })
     });
-    showToast('تمت إضافة المهمة');
-    fetchTasks();
+
+    if (res.ok) {
+      showToast('تمت إضافة المهمة ✓');
+      fetchTasks();
+    } else {
+      const err = await res.json();
+      alert('خطأ: ' + JSON.stringify(err));
+    }
   }
 
   async function closeTask(id, closer) {
     if (!closer) { alert('اختر اسمك أولاً'); return; }
-    await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tasks?id=eq.${id}`, {
       method: 'PATCH',
-      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      headers: HEADERS,
       body: JSON.stringify({ done: true, closed_by: closer, closed_at: new Date().toLocaleString('ar-SA') })
     });
-    showToast('تم إغلاق المهمة ✓');
-    fetchTasks();
+    if (res.ok) { showToast('تم إغلاق المهمة ✓'); fetchTasks(); }
   }
 
   async function deleteTask(id) {
