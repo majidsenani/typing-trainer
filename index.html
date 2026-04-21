@@ -1,854 +1,173 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مدرب Numpad الاحترافي</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظام تتبع مهام الرواتب</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;600;700;900&display=swap');
-
-:root {
-  --bg: #080c12;
-  --surface: #0f1520;
-  --card: #141d2e;
-  --border: rgba(255,215,0,0.15);
-  --gold: #ffd700;
-  --gold2: #ffb300;
-  --blue: #00d4ff;
-  --green: #00ff88;
-  --red: #ff4466;
-  --text: #ddeeff;
-  --dim: #4a6080;
-  --glow-gold: 0 0 20px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2);
-  --glow-blue: 0 0 20px rgba(0,212,255,0.5), 0 0 60px rgba(0,212,255,0.2);
-  --glow-green: 0 0 25px rgba(0,255,136,0.6);
-  --font-display: 'Orbitron', 'Courier New', monospace;
-  --font-body: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
-  cursor: crosshair;
-}
-
-/* ─── خلفية ─── */
-#bg-canvas {
-  position: fixed; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(0,212,255,0.04) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 80% 50%, rgba(255,215,0,0.04) 0%, transparent 70%),
-    linear-gradient(180deg, #080c12 0%, #0a1020 100%);
-}
-.grid-lines {
-  position: fixed; inset: 0; z-index: 0;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: gridDrift 30s linear infinite;
-}
-@keyframes gridDrift {
-  to { background-position: 60px 60px; }
-}
-
-/* ─── شاشة البداية / التعليمية ─── */
-#intro-screen {
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(8,12,18,0.97);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 0;
-  overflow-y: auto;
-  padding: 20px 0 30px;
-}
-
-.intro-logo {
-  font-family: var(--font-display);
-  font-size: clamp(22px, 4vw, 44px);
-  font-weight: 900;
-  color: var(--gold);
-  text-shadow: var(--glow-gold);
-  letter-spacing: 5px;
-  text-align: center;
-  animation: logoPulse 3s ease-in-out infinite;
-  margin-bottom: 4px;
-}
-.intro-sub {
-  color: var(--dim);
-  font-size: 14px;
-  letter-spacing: 3px;
-  margin-bottom: 28px;
-  text-align: center;
-}
-@keyframes logoPulse {
-  0%,100% { text-shadow: var(--glow-gold); }
-  50% { text-shadow: 0 0 40px rgba(255,215,0,0.9), 0 0 100px rgba(255,215,0,0.3); }
-}
-
-/* لوحة المفاتيح التعليمية */
-.numpad-visual {
-  display: grid;
-  grid-template-columns: repeat(4, 68px);
-  gap: 8px;
-  margin-bottom: 24px;
-  position: relative;
-}
-.nk {
-  height: 64px;
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 18px; font-weight: 700;
-  color: var(--text);
-  position: relative;
-  transition: all 0.3s;
-  cursor: default;
-}
-.nk .sub { font-size: 9px; color: var(--dim); margin-top: 2px; letter-spacing: 1px; }
-.nk.wide { grid-column: span 2; }
-.nk.highlight-num {
-  border-color: var(--gold);
-  color: var(--gold);
-  box-shadow: var(--glow-gold);
-  background: rgba(255,215,0,0.08);
-  animation: keyBounce 1.5s ease-in-out infinite;
-}
-.nk.highlight-enter {
-  border-color: var(--blue);
-  color: var(--blue);
-  box-shadow: var(--glow-blue);
-  background: rgba(0,212,255,0.08);
-  animation: keyBounce 1.5s ease-in-out infinite 0.75s;
-}
-@keyframes keyBounce {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-/* بطاقات التعليم */
-.edu-cards {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 700px;
-  margin-bottom: 24px;
-  padding: 0 16px;
-}
-.edu-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 18px;
-  flex: 1; min-width: 180px; max-width: 220px;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  animation: cardSlide 0.5s ease both;
-}
-.edu-card:nth-child(2) { animation-delay: 0.1s; }
-.edu-card:nth-child(3) { animation-delay: 0.2s; }
-@keyframes cardSlide {
-  from { opacity:0; transform: translateY(20px); }
-  to   { opacity:1; transform: translateY(0); }
-}
-.edu-card .icon { font-size: 26px; margin-bottom: 6px; }
-.edu-card .title { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
-.edu-card .desc  { font-size: 12px; color: var(--dim); line-height: 1.7; }
-
-/* خيارات المدة والمستوى */
-.options-row {
-  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-  margin-bottom: 10px;
-}
-.opt-label { font-size: 12px; color: var(--dim); letter-spacing: 2px; margin-bottom: 8px; text-align: center; }
-.opt-btn {
-  padding: 9px 22px;
-  background: transparent;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 14px; font-weight: 600;
-  color: var(--dim);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.opt-btn:hover { border-color: var(--gold); color: var(--gold); }
-.opt-btn.sel { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.07); }
-
-.start-btn {
-  margin-top: 16px;
-  padding: 16px 64px;
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
-  color: #000;
-  border: none; border-radius: 50px;
-  font-family: var(--font-display);
-  font-size: 17px; font-weight: 900;
-  cursor: pointer; letter-spacing: 3px;
-  box-shadow: var(--glow-gold);
-  transition: all 0.3s;
-  animation: btnBreath 2s ease-in-out infinite;
-}
-.start-btn:hover { transform: scale(1.06); animation: none; box-shadow: 0 0 50px rgba(255,215,0,0.7); }
-@keyframes btnBreath {
-  0%,100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-/* ─── HUD ─── */
-#hud {
-  position: fixed; top: 0; left: 0; right: 0;
-  height: 62px;
-  display: none;
-  align-items: center; justify-content: space-between;
-  padding: 0 24px;
-  background: rgba(8,12,18,0.9);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(16px);
-  z-index: 100;
-}
-.hud-stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
-.hud-lbl { font-size: 9px; letter-spacing: 2px; color: var(--dim); font-family: var(--font-display); }
-.hud-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--gold); }
-.hud-val.blue  { color: var(--blue); }
-.hud-val.green { color: var(--green); }
-.hud-val.red   { color: var(--red); }
-
-#timer-wrap { flex:1; margin: 0 20px; }
-#timer-track {
-  height: 5px; background: rgba(255,255,255,0.07);
-  border-radius: 3px; overflow: hidden;
-}
-#timer-fill {
-  height: 100%; width: 100%;
-  background: linear-gradient(90deg, var(--green), var(--blue));
-  border-radius: 3px;
-  transition: width 0.9s linear, background 0.5s;
-}
-
-/* ─── Numpad Guide (أثناء اللعب) ─── */
-#numpad-guide {
-  position: fixed; bottom: 16px; left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  gap: 4px;
-  z-index: 90;
-}
-.gk {
-  width: 38px; height: 38px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 13px; font-weight: 700;
-  color: var(--dim);
-  transition: all 0.15s;
-}
-.gk.lit {
-  border-color: var(--gold);
-  color: var(--gold);
-  box-shadow: 0 0 10px rgba(255,215,0,0.5);
-  background: rgba(255,215,0,0.1);
-  transform: scale(1.15);
-}
-
-/* ─── الهدف ─── */
-.target {
-  position: absolute;
-  width: 84px; height: 84px;
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 34px; font-weight: 900;
-  color: #fff;
-  cursor: pointer;
-  border: 3px solid rgba(255,255,255,0.25);
-  transition: transform 0.15s, box-shadow 0.15s;
-  animation: targetAppear 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-@keyframes targetAppear {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-.target::after {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,215,0,0.2);
-  animation: ring 1.8s ease-in-out infinite;
-}
-@keyframes ring {
-  0%,100% { transform: scale(1); opacity:0.4; }
-  50% { transform: scale(1.2); opacity:0.1; }
-}
-.target.key-ok {
-  background: var(--green) !important;
-  border-color: var(--green);
-  box-shadow: var(--glow-green);
-  transform: scale(1.2);
-}
-
-/* ─── تأثيرات ─── */
-.hit-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 3px solid var(--green);
-  pointer-events: none;
-  animation: expand 0.5s ease-out forwards;
-  z-index: 50;
-}
-@keyframes expand {
-  from { transform: scale(0.8); opacity:1; }
-  to   { transform: scale(2.2); opacity:0; }
-}
-.pop {
-  position: absolute;
-  font-family: var(--font-display);
-  font-weight: 900;
-  pointer-events: none;
-  animation: flyUp 0.7s ease-out forwards;
-  z-index: 60;
-}
-@keyframes flyUp {
-  from { transform: translateY(0) scale(1); opacity:1; }
-  to   { transform: translateY(-70px) scale(0.8); opacity:0; }
-}
-.flash-overlay {
-  position: fixed; inset:0;
-  pointer-events: none;
-  z-index: 200;
-  animation: flashFade 0.2s ease-out forwards;
-}
-@keyframes flashFade {
-  from { opacity: 0.15; }
-  to   { opacity: 0; }
-}
-
-/* ─── مؤشر المفتاح ─── */
-#key-ind {
-  position: fixed; bottom: 62px; left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-display);
-  font-size: 28px; font-weight: 900;
-  color: var(--gold);
-  text-shadow: var(--glow-gold);
-  background: rgba(255,215,0,0.08);
-  border: 2px solid rgba(255,215,0,0.3);
-  border-radius: 8px;
-  padding: 5px 18px;
-  opacity: 0;
-  transition: opacity 0.1s;
-  z-index: 100;
-  pointer-events: none;
-}
-#key-ind.show { opacity: 1; }
-
-/* ─── شاشة النهاية ─── */
-#end-screen {
-  position: fixed; inset:0; z-index:300;
-  background: rgba(8,12,18,0.97);
-  display: none; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 20px;
-  animation: fadeIn 0.4s ease;
-}
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-.end-title {
-  font-family: var(--font-display);
-  font-size: clamp(26px,4vw,46px);
-  font-weight: 900;
-  color: var(--gold);
-  text-shadow: var(--glow-gold);
-  letter-spacing: 4px;
-  text-align: center;
-}
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  max-width: 580px; width: 92%;
-}
-.res-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 10px;
-  text-align: center;
-}
-.res-val {
-  font-family: var(--font-display);
-  font-size: 26px; font-weight: 700;
-  color: var(--blue);
-}
-.res-lbl { font-size: 11px; color: var(--dim); margin-top: 4px; }
-
-.rank-pill {
-  font-family: var(--font-display);
-  font-size: 16px; font-weight: 700;
-  padding: 10px 32px;
-  border-radius: 50px;
-  border: 2px solid var(--gold);
-  color: var(--gold);
-  background: rgba(255,215,0,0.07);
-  letter-spacing: 3px;
-}
-
-/* بطاقة التعليم في النهاية */
-.edu-end {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 24px;
-  max-width: 500px; width: 92%;
-  text-align: center;
-}
-.edu-end .tip-title { color: var(--blue); font-size: 13px; font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
-.edu-end .tip-body  { color: var(--dim); font-size: 12px; line-height: 1.8; }
-
-.end-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.btn-primary {
-  padding: 13px 44px;
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
-  color: #000; border: none; border-radius: 50px;
-  font-family: var(--font-display);
-  font-size: 14px; font-weight: 900;
-  cursor: pointer; letter-spacing: 2px;
-  transition: all 0.3s;
-}
-.btn-primary:hover { transform: scale(1.06); box-shadow: var(--glow-gold); }
-.btn-secondary {
-  padding: 13px 32px;
-  background: transparent;
-  color: var(--blue); border: 2px solid rgba(0,212,255,0.4);
-  border-radius: 50px;
-  font-family: var(--font-body);
-  font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: all 0.3s;
-}
-.btn-secondary:hover { background: rgba(0,212,255,0.08); border-color: var(--blue); }
-
-#game-container { position: fixed; top:62px; left:0; right:0; bottom:0; z-index:1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f3; color: #1a1a1a; padding: 24px; max-width: 800px; margin: 0 auto; }
+  .header { padding: 1.5rem 0 1rem; border-bottom: 1px solid #e0e0e0; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header p { font-size: 13px; color: #888; margin-top: 4px; }
+  .add-task-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .add-task-card h2 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+  .form-row { display: flex; gap: 10px; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .form-group label { font-size: 12px; color: #888; }
+  input[type=text] { width: 100%; padding: 9px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; color: #1a1a1a; font-family: inherit; }
+  input[type=text]:focus { outline: none; border-color: #999; }
+  select { padding: 8px 10px; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; color: #1a1a1a; font-family: inherit; }
+  .add-btn { background: #1a1a1a; color: #fff; border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .add-btn:hover { opacity: 0.85; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .stat { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-name { font-size: 13px; font-weight: 500; }
+  .open-count { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .open-label { font-size: 11px; color: #888; margin-top: 2px; }
+  .tasks-section h2 { font-size: 15px; font-weight: 500; margin-bottom: 10px; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .filter-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid #ddd; background: #f0f0f0; font-size: 13px; cursor: pointer; color: #555; font-family: inherit; }
+  .filter-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .task-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .task-item.done { opacity: 0.55; }
+  .task-name { flex: 1; font-size: 14px; }
+  .task-name.done-text { text-decoration: line-through; color: #999; }
+  .task-closer { font-size: 12px; background: #EAF3DE; color: #27500A; padding: 3px 10px; border-radius: 20px; }
+  .who-select { font-size: 12px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; color: #1a1a1a; font-family: inherit; }
+  .close-btn { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: #555; font-family: inherit; }
+  .close-btn:hover { background: #f5f5f5; }
+  .empty { text-align: center; color: #aaa; font-size: 14px; padding: 2rem; }
+  @media (max-width: 600px) {
+    body { padding: 16px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .form-row { flex-direction: column; }
+    .add-btn { width: 100%; }
+  }
 </style>
 </head>
 <body>
 
-<div id="bg-canvas"></div>
-<div class="grid-lines"></div>
-
-<!-- ══════════════════ شاشة البداية التعليمية ══════════════════ -->
-<div id="intro-screen">
-  <div class="intro-logo">⌨ NUMPAD TRAINER</div>
-  <div class="intro-sub">مدرّب لوحة الأرقام الاحترافي</div>
-
-  <!-- لوحة المفاتيح المرئية التعليمية -->
-  <div class="numpad-visual" id="numpad-vis">
-    <!-- صف 1 -->
-    <div class="nk highlight-enter">Num<br><span class="sub">Lock</span></div>
-    <div class="nk">/</div>
-    <div class="nk">*</div>
-    <div class="nk">−</div>
-    <!-- صف 2 -->
-    <div class="nk highlight-num">7<span class="sub">Home</span></div>
-    <div class="nk highlight-num">8<span class="sub">↑</span></div>
-    <div class="nk highlight-num">9<span class="sub">PgUp</span></div>
-    <div class="nk highlight-enter" style="grid-row: span 2; height: 140px;">Enter</div>
-    <!-- صف 3 -->
-    <div class="nk highlight-num">4<span class="sub">←</span></div>
-    <div class="nk highlight-num">5</div>
-    <div class="nk highlight-num">6<span class="sub">→</span></div>
-    <!-- صف 4 -->
-    <div class="nk highlight-num">1<span class="sub">End</span></div>
-    <div class="nk highlight-num">2<span class="sub">↓</span></div>
-    <div class="nk highlight-num">3<span class="sub">PgDn</span></div>
-    <div class="nk highlight-enter" style="grid-row: span 2; height: 140px; margin-top: -68px;">Enter</div>
-    <!-- صف 5 -->
-    <div class="nk wide highlight-num">0<span class="sub">Ins</span></div>
-    <div class="nk highlight-num">.<span class="sub">Del</span></div>
-  </div>
-
-  <!-- بطاقات تعليمية -->
-  <div class="edu-cards">
-    <div class="edu-card">
-      <div class="icon">🎯</div>
-      <div class="title">هدف اللعبة</div>
-      <div class="desc">اضغط الرقم الظاهر من Numpad ثم انقر الهدف بالماوس بأسرع ما يمكن</div>
-    </div>
-    <div class="edu-card">
-      <div class="icon">⌨️</div>
-      <div class="title">Numpad هو؟</div>
-      <div class="desc">لوحة الأرقام على يمين الكيبورد — تسرّع إدخال الأرقام بشكل احترافي</div>
-    </div>
-    <div class="edu-card">
-      <div class="icon">🏆</div>
-      <div class="title">نصيحة للتسريع</div>
-      <div class="desc">ضع إصبع الوسط على 5 كمرجع، والباقي ينتشر طبيعياً على الأرقام</div>
-    </div>
-  </div>
-
-  <!-- خيارات المدة -->
-  <div style="margin-bottom:6px">
-    <div class="opt-label">⏱ مدة التدريب</div>
-    <div class="options-row">
-      <button class="opt-btn sel" data-dur="30">30 ثانية</button>
-      <button class="opt-btn" data-dur="60">دقيقة</button>
-      <button class="opt-btn" data-dur="120">دقيقتان</button>
-    </div>
-  </div>
-
-  <!-- خيارات الصعوبة -->
-  <div style="margin-bottom:4px">
-    <div class="opt-label">⚡ مستوى الصعوبة</div>
-    <div class="options-row">
-      <button class="opt-btn" data-diff="easy">سهل (1–5)</button>
-      <button class="opt-btn sel" data-diff="medium">متوسط (0–9)</button>
-      <button class="opt-btn" data-diff="hard">صعب (يتحرك)</button>
-    </div>
-  </div>
-
-  <button class="start-btn" onclick="startGame()">ابدأ التدريب ▶</button>
+<div class="header">
+  <h1>نظام تتبع مهام الرواتب</h1>
+  <p>أي موظف فاضي يختار مهمة ويغلقها باسمه</p>
 </div>
 
-<!-- ══════════════════ HUD ══════════════════ -->
-<div id="hud">
-  <div class="hud-stat">
-    <div class="hud-lbl">النقاط</div>
-    <div class="hud-val" id="score">0</div>
-  </div>
-  <div class="hud-stat">
-    <div class="hud-lbl">الأخطاء</div>
-    <div class="hud-val red" id="misses">0</div>
-  </div>
-  <div id="timer-wrap">
-    <div id="timer-track"><div id="timer-fill"></div></div>
-  </div>
-  <div class="hud-stat">
-    <div class="hud-lbl">الوقت</div>
-    <div class="hud-val blue" id="timer-val">30</div>
-  </div>
-  <div class="hud-stat">
-    <div class="hud-lbl">الدقة</div>
-    <div class="hud-val green" id="acc-val">–</div>
+<div class="add-task-card">
+  <h2>إضافة مهمة جديدة</h2>
+  <div class="form-row">
+    <div class="form-group">
+      <label>اسم المهمة</label>
+      <input type="text" id="taskName" placeholder="مثال: مراجعة كشف الراتب" onkeydown="if(event.key==='Enter')addTask()" />
+    </div>
+    <button class="add-btn" onclick="addTask()">+ إضافة</button>
   </div>
 </div>
 
-<!-- منطقة اللعب -->
-<div id="game-container"></div>
-
-<!-- مؤشر المفتاح المضغوط -->
-<div id="key-ind"></div>
-
-<!-- Numpad صغيرة أسفل الشاشة للمساعدة -->
-<div id="numpad-guide">
-  <div style="display:grid; grid-template-columns: repeat(3,38px); gap:4px" id="guide-grid"></div>
+<div class="stats">
+  <div class="stat"><div class="stat-name">مشاعل</div><div class="open-count" id="s-مشاعل">0</div><div class="open-label">مهمة مغلقة</div></div>
+  <div class="stat"><div class="stat-name">محمد</div><div class="open-count" id="s-محمد">0</div><div class="open-label">مهمة مغلقة</div></div>
+  <div class="stat"><div class="stat-name">نبيل</div><div class="open-count" id="s-نبيل">0</div><div class="open-label">مهمة مغلقة</div></div>
+  <div class="stat"><div class="stat-name">ماجد</div><div class="open-count" id="s-ماجد">0</div><div class="open-label">مهمة مغلقة</div></div>
 </div>
 
-<!-- ══════════════════ شاشة النهاية ══════════════════ -->
-<div id="end-screen">
-  <div class="end-title">🏆 انتهى التدريب!</div>
-  <div class="results-grid">
-    <div class="res-card"><div class="res-val" id="r-score">0</div><div class="res-lbl">النقاط</div></div>
-    <div class="res-card"><div class="res-val" id="r-acc">0%</div><div class="res-lbl">الدقة</div></div>
-    <div class="res-card"><div class="res-val" id="r-speed">0</div><div class="res-lbl">هدف/دقيقة</div></div>
-    <div class="res-card"><div class="res-val" id="r-miss">0</div><div class="res-lbl">الأخطاء</div></div>
+<div class="tasks-section">
+  <h2>المهام</h2>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all', this)">الكل</button>
+    <button class="filter-btn" onclick="setFilter('open', this)">مفتوحة</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">مغلقة</button>
+    <button class="filter-btn" onclick="setFilter('مشاعل', this)">مشاعل</button>
+    <button class="filter-btn" onclick="setFilter('محمد', this)">محمد</button>
+    <button class="filter-btn" onclick="setFilter('نبيل', this)">نبيل</button>
+    <button class="filter-btn" onclick="setFilter('ماجد', this)">ماجد</button>
   </div>
-  <div class="rank-pill" id="rank-pill">مبتدئ</div>
-
-  <!-- نصيحة تعليمية بناءً على الأداء -->
-  <div class="edu-end">
-    <div class="tip-title">💡 نصيحة مخصصة لك</div>
-    <div class="tip-body" id="end-tip">استمر بالتدريب يومياً لمدة 5 دقائق لتحسين سرعتك!</div>
-  </div>
-
-  <div class="end-btns">
-    <button class="btn-primary" onclick="restartGame()">🔄 إعادة</button>
-    <button class="btn-secondary" onclick="goMenu()">📚 القائمة</button>
-  </div>
+  <div id="taskList"></div>
 </div>
 
 <script>
-// ══════════════ إعدادات ══════════════
-const DIFF = {
-  easy:   { nums: '12345', move: false },
-  medium: { nums: '0123456789', move: false },
-  hard:   { nums: '0123456789', move: true }
-};
+  let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+  let currentFilter = 'all';
+  const employees = ['مشاعل', 'محمد', 'نبيل', 'ماجد'];
 
-let duration = 30;
-let diff = 'medium';
-let score = 0, misses = 0, hits = 0;
-let timeLeft, timerInt;
-let currentKey = '';
-let gameActive = false;
-let startTime;
+  function save() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }
 
-const container = document.getElementById('game-container');
-const scoreEl   = document.getElementById('score');
-const missesEl  = document.getElementById('misses');
-const accEl     = document.getElementById('acc-val');
-const timerEl   = document.getElementById('timer-val');
-const timerFill = document.getElementById('timer-fill');
-const keyInd    = document.getElementById('key-ind');
-const hud       = document.getElementById('hud');
-const guideGrid = document.getElementById('guide-grid');
-const npGuide   = document.getElementById('numpad-guide');
+  function addTask() {
+    const name = document.getElementById('taskName').value.trim();
+    if (!name) { alert('يرجى إدخال اسم المهمة'); return; }
+    tasks.unshift({ id: Date.now(), name, done: false, closedBy: null, closedAt: null });
+    document.getElementById('taskName').value = '';
+    save();
+    render();
+  }
 
-// بناء الـ numpad guide الصغيرة
-['7','8','9','4','5','6','1','2','3'].forEach(n => {
-  const k = document.createElement('div');
-  k.className = 'gk'; k.innerText = n; k.id = 'gk'+n;
-  guideGrid.appendChild(k);
-});
-
-// ══════════════ خيارات ══════════════
-document.querySelectorAll('[data-dur]').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('[data-dur]').forEach(x => x.classList.remove('sel'));
-  b.classList.add('sel');
-  duration = parseInt(b.dataset.dur);
-}));
-document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('[data-diff]').forEach(x => x.classList.remove('sel'));
-  b.classList.add('sel');
-  diff = b.dataset.diff;
-}));
-
-// ══════════════ اللعبة ══════════════
-function startGame() {
-  score = hits = misses = 0;
-  timeLeft = duration;
-  gameActive = true;
-  startTime = Date.now();
-  currentKey = '';
-
-  scoreEl.innerText = '0';
-  missesEl.innerText = '0';
-  accEl.innerText = '–';
-  timerEl.innerText = timeLeft;
-  timerFill.style.width = '100%';
-  timerFill.style.background = 'linear-gradient(90deg, var(--green), var(--blue))';
-  timerEl.style.color = 'var(--blue)';
-
-  document.getElementById('intro-screen').style.display = 'none';
-  document.getElementById('end-screen').style.display = 'none';
-  hud.style.display = 'flex';
-  npGuide.style.display = 'flex';
-
-  spawnTarget();
-
-  timerInt = setInterval(() => {
-    timeLeft--;
-    timerEl.innerText = timeLeft;
-    timerFill.style.width = (timeLeft / duration * 100) + '%';
-    if (timeLeft <= Math.round(duration * 0.3)) {
-      timerFill.style.background = 'linear-gradient(90deg, var(--red), #ff8800)';
-      timerEl.style.color = 'var(--red)';
+  function closeTask(id, closer) {
+    if (!closer) { alert('اختر اسمك أولاً'); return; }
+    const t = tasks.find(x => x.id === id);
+    if (t) {
+      t.done = true;
+      t.closedBy = closer;
+      t.closedAt = new Date().toLocaleString('ar-SA');
     }
-    if (timeLeft <= 0) endGame();
-  }, 1000);
-}
-
-function spawnTarget() {
-  if (!gameActive) return;
-  container.innerHTML = '';
-
-  const cfg = DIFF[diff];
-  const num = cfg.nums[Math.floor(Math.random() * cfg.nums.length)];
-  const size = 84;
-
-  const t = document.createElement('div');
-  t.className = 'target';
-  t.innerText = num;
-  t.dataset.num = num;
-
-  // لون حسب الرقم
-  const hue = (parseInt(num) * 36 + 160) % 360;
-  t.style.background = `hsla(${hue},70%,35%,0.85)`;
-  t.style.boxShadow  = `0 0 20px hsla(${hue},80%,50%,0.3)`;
-  t.style.borderColor = `hsla(${hue},80%,60%,0.4)`;
-
-  const x = Math.random() * (window.innerWidth  - size - 40) + 20;
-  const y = Math.random() * (window.innerHeight - 62 - size - 60) + 62;
-  t.style.left = x + 'px';
-  t.style.top  = y + 'px';
-
-  t.addEventListener('mousedown', handleClick);
-  container.appendChild(t);
-
-  // تحريك في وضع الصعب
-  if (cfg.move) moveTarget(t, x, y, size);
-
-  // إضاءة مفتاح الـ guide
-  highlightGuide(num);
-}
-
-function moveTarget(el, sx, sy, sz) {
-  let x = sx, y = sy;
-  let vx = (Math.random()-0.5)*3, vy = (Math.random()-0.5)*3;
-  const iv = setInterval(() => {
-    if (!document.body.contains(el)) { clearInterval(iv); return; }
-    x += vx; y += vy;
-    const mw = window.innerWidth - sz;
-    const mh = window.innerHeight - 62 - sz - 60;
-    if (x < 0 || x > mw) vx *= -1;
-    if (y < 62 || y > 62 + mh) vy *= -1;
-    el.style.left = x + 'px';
-    el.style.top  = y + 'px';
-  }, 16);
-}
-
-function handleClick() {
-  if (!gameActive) return;
-  const expected = this.dataset.num;
-  if (currentKey === expected) {
-    hits++; score++;
-    scoreEl.innerText = score;
-    spawnFX(this, true);
-    updateAcc();
-    currentKey = '';
-    keyInd.classList.remove('show');
-    clearGuide();
-    setTimeout(spawnTarget, 60);
-  } else {
-    misses++;
-    missesEl.innerText = misses;
-    updateAcc();
-    spawnFX(this, false);
-    doFlash(false);
+    save();
+    render();
   }
-}
 
-// ══════════════ لوحة المفاتيح ══════════════
-window.addEventListener('keydown', e => {
-  if (!gameActive) return;
-  const k = e.key;
-  if (!'0123456789'.includes(k)) return;
+  function deleteTask(id) {
+    if (!confirm('هل تريد حذف هذه المهمة؟')) return;
+    tasks = tasks.filter(x => x.id !== id);
+    save();
+    render();
+  }
 
-  currentKey = k;
-  keyInd.innerText = k;
-  keyInd.classList.add('show');
-  highlightGuide(k);
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
 
-  const t = document.querySelector('.target');
-  if (t) {
-    if (k === t.dataset.num) t.classList.add('key-ok');
-    else {
-      misses++;
-      missesEl.innerText = misses;
-      updateAcc();
-      doFlash(false);
+  function updateStats() {
+    employees.forEach(emp => {
+      const done = tasks.filter(t => t.done && t.closedBy === emp).length;
+      document.getElementById('s-' + emp).textContent = done;
+    });
+  }
+
+  function render() {
+    updateStats();
+    let filtered = tasks;
+    if (currentFilter === 'open') filtered = tasks.filter(t => !t.done);
+    else if (currentFilter === 'done') filtered = tasks.filter(t => t.done);
+    else if (employees.includes(currentFilter)) filtered = tasks.filter(t => t.closedBy === currentFilter);
+
+    const list = document.getElementById('taskList');
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty">لا توجد مهام</div>';
+      return;
     }
+
+    list.innerHTML = filtered.map(t => `
+      <div class="task-item ${t.done ? 'done' : ''}">
+        <div style="flex:1">
+          <div class="task-name ${t.done ? 'done-text' : ''}">${t.name}</div>
+          ${t.done ? `<div style="margin-top:5px"><span class="task-closer">أغلقها: ${t.closedBy} — ${t.closedAt}</span></div>` : ''}
+        </div>
+        ${!t.done ? `
+          <select class="who-select" id="closer-${t.id}">
+            <option value="">أنا...</option>
+            ${employees.map(e => `<option>${e}</option>`).join('')}
+          </select>
+          <button class="close-btn" onclick="closeTask(${t.id}, document.getElementById('closer-${t.id}').value)">تم ✓</button>
+        ` : ''}
+        <button class="close-btn" onclick="deleteTask(${t.id})">حذف</button>
+      </div>
+    `).join('');
   }
-});
 
-window.addEventListener('keyup', () => {
-  keyInd.classList.remove('show');
-  const t = document.querySelector('.target');
-  if (t) t.classList.remove('key-ok');
-  currentKey = '';
-});
-
-// ══════════════ مساعدات ══════════════
-function highlightGuide(n) {
-  clearGuide();
-  const el = document.getElementById('gk'+n);
-  if (el) el.classList.add('lit');
-}
-function clearGuide() {
-  document.querySelectorAll('.gk').forEach(g => g.classList.remove('lit'));
-}
-
-function updateAcc() {
-  const total = hits + misses;
-  accEl.innerText = total > 0 ? Math.round(hits/total*100)+'%' : '–';
-}
-
-function spawnFX(el, success) {
-  const rect = el.getBoundingClientRect();
-  const cx = rect.left + rect.width/2;
-  const cy = rect.top  + rect.height/2;
-
-  if (success) {
-    const ring = document.createElement('div');
-    ring.className = 'hit-ring';
-    ring.style.cssText = `left:${cx-rect.width/2}px;top:${cy-rect.height/2-62}px;width:${rect.width}px;height:${rect.height}px;`;
-    container.appendChild(ring);
-    setTimeout(()=>ring.remove(), 500);
-
-    const pop = document.createElement('div');
-    pop.className = 'pop';
-    pop.innerText = '+1';
-    pop.style.cssText = `left:${cx-16}px;top:${cy-70}px;font-size:20px;color:var(--green);`;
-    container.appendChild(pop);
-    setTimeout(()=>pop.remove(), 700);
-    doFlash(true);
-  }
-}
-
-function doFlash(success) {
-  const fl = document.createElement('div');
-  fl.className = 'flash-overlay';
-  fl.style.background = success ? 'var(--green)' : 'var(--red)';
-  document.body.appendChild(fl);
-  setTimeout(()=>fl.remove(), 200);
-}
-
-// ══════════════ النهاية ══════════════
-function endGame() {
-  clearInterval(timerInt);
-  gameActive = false;
-  container.innerHTML = '';
-  hud.style.display = 'none';
-  npGuide.style.display = 'none';
-  keyInd.classList.remove('show');
-
-  const total = hits + misses;
-  const acc   = total > 0 ? Math.round(hits/total*100) : 0;
-  const spd   = Math.round(hits / (duration/60));
-
-  document.getElementById('r-score').innerText = hits;
-  document.getElementById('r-acc').innerText   = acc + '%';
-  document.getElementById('r-speed').innerText = spd;
-  document.getElementById('r-miss').innerText  = misses;
-
-  const ranks = [
-    [50,'🔥 أسطوري'],
-    [35,'⚡ خبير'],
-    [20,'🎯 متقدم'],
-    [10,'📈 متوسط'],
-    [0, '🌱 مبتدئ']
-  ];
-  document.getElementById('rank-pill').innerText = ranks.find(r => spd>=r[0])[1];
-
-  const tips = [
-    [acc<60, 'ركّز على الضغط الصحيح أولاً — الدقة أهم من السرعة في البداية. تمرّن ببطء ثم زد سرعتك تدريجياً.'],
-    [misses > hits, 'كثير من الأخطاء؟ ضع يدك على الـ Numpad واحفظ مواضع الأرقام قبل التدريب.'],
-    [spd < 10, 'لا تنظر للوحة المفاتيح! حاول أن تعتمد على الإحساس بمواضع الأرقام (اللمس العمياء).'],
-    [spd >= 35, 'أداء رائع! جرب زيادة الصعوبة لتحدي نفسك بأرقام متحركة.'],
-    [true, 'استمر بالتدريب يومياً لمدة 5 دقائق — ستلاحظ فرقاً كبيراً في سرعتك خلال أسبوع!']
-  ];
-  document.getElementById('end-tip').innerText = tips.find(t => t[0])[1];
-
-  document.getElementById('end-screen').style.display = 'flex';
-}
-
-function restartGame() {
-  document.getElementById('end-screen').style.display = 'none';
-  startGame();
-}
-function goMenu() {
-  document.getElementById('end-screen').style.display = 'none';
-  document.getElementById('intro-screen').style.display = 'flex';
-}
+  render();
 </script>
 </body>
 </html>
